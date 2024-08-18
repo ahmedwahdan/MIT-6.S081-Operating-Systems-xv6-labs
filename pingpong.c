@@ -5,6 +5,7 @@
 #define BYTES_TO_SEND (10000U)
 #define READ_FD (0U)
 #define WEITE_FD (1U)
+#define TIMER_RESOLTION (100)
 
 int main() {
 
@@ -12,8 +13,8 @@ int main() {
   int pong_pipe_fd[2];
   int fd;
   char buf[1] = {'A'};
-  uint start_time = 0;
-  uint end_time = 0;
+  uint start_xticks = 0;
+  uint end_xticks = 0;
 
   // create pipes
   if (pipe(ping_pipe_fd) < 0 || pipe(pong_pipe_fd) < 0) {
@@ -34,7 +35,7 @@ int main() {
     close(pong_pipe_fd[WEITE_FD]);
 
     printf("Starting parent process\n");
-    start_time = uptime();
+    start_xticks = uptime();
     for (uint i = 0; i < BYTES_TO_SEND; i++) {
       if (write(ping_pipe_fd[WEITE_FD], buf, 1) != 1) {
         fprintf(2, "Write error\n");
@@ -45,7 +46,7 @@ int main() {
         break;
       }
     }
-    end_time = uptime();
+    end_xticks = uptime();
     // close pipes
     close(ping_pipe_fd[WEITE_FD]);
     close(pong_pipe_fd[READ_FD]);
@@ -54,11 +55,13 @@ int main() {
     wait(&status);
 
     if (status == 0) {
-      printf("start time %d, end time %d\n", start_time, end_time);
-      int elapsed = end_time - start_time;
+      printf("start ticks %d, end ticks %d\n", start_xticks, end_xticks);
+      int elapsed = (end_xticks - start_xticks) * TIMER_RESOLTION;
+      printf("Elapsed time %d milliseconds\n", elapsed);
       if (elapsed > 0) {
+        int elapsed_seconds = elapsed / 1000;
         printf("Ping/Pong completed, performance: %d exchanges per second\n",
-               BYTES_TO_SEND / elapsed);
+               BYTES_TO_SEND / elapsed_seconds);
       } else {
         printf("Ping/Pong completed too quickly to measure performance "
                "accurately\n");
